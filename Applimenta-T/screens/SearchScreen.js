@@ -10,8 +10,8 @@ import {
   ActivityIndicator,
   Alert
 } from 'react-native';
-import { buscarProductos } from '../servicios/openFoodFactsApi';
-import FoodCard from '../componentes/FoodCard';
+import { buscarProductos } from '../services/openFoodFactsApi';
+import FoodCard from '../components/FoodCard';
 
 const SearchScreen = ({ navigation }) => {
   const [busqueda, setBusqueda] = useState('');

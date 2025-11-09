@@ -9,14 +9,14 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
 // Importar pantallas
-import LoginScreen from './pantallas/LoginScreen';
-import RegisterScreen from './pantallas/RegisterScreen';
-import HomeScreen from './pantallas/HomeScreen';
-import SearchScreen from './pantallas/SearchScreen';
-import ScanScreen from './pantallas/ScanScreen';
-import FoodDetailScreen from './pantallas/FoodDetailScreen';
-import FavoritesScreen from './pantallas/FavoritesScreen';
-import ProfileScreen from './pantallas/ProfileScreen';
+import LoginScreen from './screens/LoginScreen';
+import RegisterScreen from './screens/RegisterScreen';
+import HomeScreen from './screens/HomeScreen';
+import SearchScreen from './screens/SearchScreen';
+import ScanScreen from './screens/ScanScreen';
+import FoodDetailScreen from './screens/FoodDetailScreen';
+import FavoritesScreen from './screens/FavoritesScreen';
+import ProfileScreen from './screens/ProfileScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();

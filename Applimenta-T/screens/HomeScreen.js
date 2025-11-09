@@ -14,9 +14,9 @@ import {
   obtenerPlanDelDia, 
   crearPlanAlimentacion,
   obtenerPerfilUsuario 
-} from '../servicios/firebaseService';
-import { buscarProductosColombianos } from '../servicios/openFoodFactsApi';
-import { obtenerRecomendacionesDiarias } from '../servicios/edamamApi';
+} from '../services/firebaseService';
+import { buscarProductosColombianos } from '../services/openFoodFactsApi';
+import { obtenerRecomendacionesDiarias } from '../services/edamamApi';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const HomeScreen = ({ navigation }) => {

@@ -10,8 +10,8 @@ import {
   RefreshControl
 } from 'react-native';
 import { auth } from '../config/firebaseConfig';
-import { obtenerFavoritos, eliminarDeFavoritos } from '../servicios/firebaseService';
-import FoodCard from '../componentes/FoodCard';
+import { obtenerFavoritos, eliminarDeFavoritos } from '../services/firebaseService';
+import FoodCard from '../components/FoodCard';
 
 const FavoritesScreen = ({ navigation }) => {
   const [favoritos, setFavoritos] = useState([]);

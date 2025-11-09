@@ -4,14 +4,13 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // Configuración de Firebase
-// IMPORTANTE: Reemplaza estos valores con los de tu proyecto en Firebase Console
 const firebaseConfig = {
-  apiKey: "TU_API_KEY_AQUI",
-  authDomain: "TU_AUTH_DOMAIN_AQUI",
-  projectId: "TU_PROJECT_ID_AQUI",
-  storageBucket: "TU_STORAGE_BUCKET_AQUI",
-  messagingSenderId: "TU_MESSAGING_SENDER_ID_AQUI",
-  appId: "TU_APP_ID_AQUI"
+  apiKey: "AIzaSyBB-aflnLBGJ17xP9MknZMymen8irw8yUo",
+  authDomain: "applimenta-t.firebaseapp.com",
+  projectId: "applimenta-t",
+  storageBucket: "applimenta-t.firebasestorage.app",
+  messagingSenderId: "73895335255",
+  appId: "1:73895335255:web:e7539b87ede47f86b71a12"
 };
 
 // Inicializar Firebase

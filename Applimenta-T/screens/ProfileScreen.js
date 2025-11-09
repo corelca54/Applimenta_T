@@ -15,7 +15,7 @@ import { auth } from '../config/firebaseConfig';
 import { 
   obtenerPerfilUsuario, 
   guardarPerfilUsuario 
-} from '../servicios/firebaseService';
+} from '../services/firebaseService';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const ProfileScreen = ({ navigation }) => {

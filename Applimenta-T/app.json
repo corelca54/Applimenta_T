@@ -31,7 +31,7 @@
       "package": "com.applimentat.app"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       [

@@ -2,8 +2,8 @@
 import axios from 'axios';
 
 // IMPORTANTE: Obtén tus propias credenciales en https://developer.edamam.com/
-const APP_ID = 'TU_APP_ID_AQUI';
-const APP_KEY = 'TU_APP_KEY_AQUI';
+const APP_ID = 'e9a4c934';
+const APP_KEY = '8fba15a80becf38b2729c3ca63e84d84';
 const BASE_URL = 'https://api.edamam.com/api/nutrition-details';
 
 // Analizar información nutricional de recetas

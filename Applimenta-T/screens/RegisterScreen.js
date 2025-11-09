@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../config/firebaseConfig';
-import { guardarPerfilUsuario } from '../servicios/firebaseService';
+import { guardarPerfilUsuario } from '../services/firebaseService';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const RegisterScreen = ({ navigation }) => {

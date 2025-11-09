@@ -10,8 +10,8 @@ import {
   Alert
 } from 'react-native';
 import { auth } from '../config/firebaseConfig';
-import { agregarAFavoritos, estaEnFavoritos } from '../servicios/firebaseService';
-import NutritionInfo from '../componentes/NutritionInfo';
+import { agregarAFavoritos, estaEnFavoritos } from '../services/firebaseService';
+import NutritionInfo from '../components/NutritionInfo';
 
 const FoodDetailScreen = ({ route, navigation }) => {
   const { producto } = route.params;

@@ -9,7 +9,7 @@ import {
   Dimensions
 } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
-import { buscarPorCodigoBarras } from '../servicios/openFoodFactsApi';
+import { buscarPorCodigoBarras } from '../services/openFoodFactsApi';
 
 const { width } = Dimensions.get('window');
 
