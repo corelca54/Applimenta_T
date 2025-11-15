@@ -1,0 +1,7 @@
+Starting project at /workspaces/Applimenta_T/Applimenta-T
+› Port 8081 is running this app in another window
+  /workspaces/Applimenta_T/Applimenta-T (pid 71000)
+Input is required, but 'npx expo' is in non-interactive mode.
+Required input:
+> Use port 8082 instead?
+› Skipping dev server

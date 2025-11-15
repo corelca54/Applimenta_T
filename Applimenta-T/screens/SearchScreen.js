@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { buscarProductos } from '../services/openFoodFactsApi';
 import FoodCard from '../components/FoodCard';
+import { buscarProductosColombianosPorTermino } from '../services/openFoodFactsApi';
 
 const SearchScreen = ({ navigation }) => {
   const [busqueda, setBusqueda] = useState('');
@@ -29,7 +30,7 @@ const SearchScreen = ({ navigation }) => {
     setBuscado(true);
 
     try {
-      const resultados = await buscarProductos(busqueda);
+        const resultados = await buscarProductosColombianosPorTermino(busqueda);
       setProductos(resultados);
 
       if (resultados.length === 0) {

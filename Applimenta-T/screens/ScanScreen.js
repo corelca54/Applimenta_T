@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import { buscarPorCodigoBarras } from '../services/openFoodFactsApi';
+import { productosColombianosLocales } from '../services/colombianProductsData';
+
 
 const { width } = Dimensions.get('window');
 
@@ -35,14 +37,19 @@ const ScanScreen = ({ navigation }) => {
   };
 
   const handleBarCodeScanned = async ({ type, data }) => {
-    if (scanning) return; // Evitar múltiples escaneos
+    if (scanning) return;
 
     setScanned(true);
     setScanning(true);
 
     try {
-      // Buscar producto por código de barras
-      const producto = await buscarPorCodigoBarras(data);
+      // Buscar en productos locales colombianos primero (códigos 999000000...)
+      let producto = productosColombianosLocales.find(p => p.code === data);
+
+      if (!producto) {
+        // Si no está en locales, buscar en Open Food Facts
+        producto = await buscarPorCodigoBarras(data);
+      }
 
       if (producto) {
         Alert.alert(
@@ -69,7 +76,7 @@ const ScanScreen = ({ navigation }) => {
       } else {
         Alert.alert(
           'Producto No Encontrado',
-          `No se encontró información para el código: ${data}`,
+          `No se encontró información para: ${data}\n\nCódigos de prueba disponibles:\n999000000001-010`,
           [
             {
               text: 'Escanear Otro',
@@ -98,6 +105,7 @@ const ScanScreen = ({ navigation }) => {
       );
     }
   };
+
 
   if (hasPermission === null) {
     return (

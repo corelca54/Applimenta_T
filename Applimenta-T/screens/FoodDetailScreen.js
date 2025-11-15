@@ -29,6 +29,21 @@ const FoodDetailScreen = ({ route, navigation }) => {
       setEsFavorito(favorito);
     }
   };
+  // Validar que el producto tenga información mínima requerida
+  const validarProducto = (prod) => {
+    return prod && (prod.product_name || prod.nombre || prod.brands || prod.marca);
+  };
+
+  if (!validarProducto(producto)) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Ingrese un item válido</Text>
+        </View>
+      </View>
+    );
+  }
+
 
   const toggleFavorito = async () => {
     setLoading(true);
@@ -202,6 +217,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa'
   },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center'
+    },
+    emptyText: {
+      fontSize: 18,
+      color: '#e74c3c',
+      fontWeight: '600',
+      textAlign: 'center'
+    },
+
   imageContainer: {
     backgroundColor: '#fff',
     padding: 20,

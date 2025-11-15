@@ -1,49 +1,92 @@
-// ...existing code...
+// servicios/edamamApi.js
 import axios from 'axios';
+import { productosColombianosLocales } from './colombianProductsData';
 
-// IMPORTANTE: Obtén tus propias credenciales en https://developer.edamam.com/
-const APP_ID = 'e9a4c934';
-const APP_KEY = '8fba15a80becf38b2729c3ca63e84d84';
-const BASE_URL = 'https://api.edamam.com/api/nutrition-details';
+// Nota: Para usar API real de Edamam, obtén credenciales en https://developer.edamam.com/
+// Por ahora usamos datos locales como principal y fallback
 
-// Analizar información nutricional de recetas
-export const analizarReceta = async (ingredientes) => {
-  try {
-    const response = await axios.post(`${BASE_URL}`, {
-      title: 'Análisis Nutricional',
-      ingr: ingredientes
-    }, {
-      params: {
-        app_id: APP_ID,
-        app_key: APP_KEY
-      }
-    });
-
-    return response.data;
-  } catch (error) {
-    console.error('Error al analizar receta:', error);
-    throw error;
-  }
-};
-
-// Buscar alimentos
+// Buscar alimentos (usa datos locales principalmente)
 export const buscarAlimentos = async (query) => {
   try {
-    const response = await axios.get('https://api.edamam.com/api/food-database/v2/parser', {
-      params: {
-        app_id: APP_ID,
-        app_key: APP_KEY,
-        ingr: query,
-        'nutrition-type': 'logging'
-      }
+    // Buscar en productos locales
+    const productosLocales = productosColombianosLocales.filter(p => {
+      const nombre = (p.product_name || '').toLowerCase();
+      const descripcion = (p.description || '').toLowerCase();
+      return nombre.includes(query.toLowerCase()) || descripcion.includes(query.toLowerCase());
     });
 
-    return response.data.hints || [];
+    if (productosLocales.length > 0) {
+      console.log(`Encontrados ${productosLocales.length} alimentos locales`);
+      return productosLocales.map(p => ({
+        food: {
+          label: p.product_name,
+          nutrients: p.nutriments
+        }
+      }));
+    }
+
+    // Si no hay locales, intentar API de Edamam
+    try {
+      const response = await axios.get('https://api.edamam.com/api/food-database/v2/parser', {
+        params: {
+          app_id: 'e9a4c934',
+          app_key: '8fba15a80becf38b2729c3ca63e84d84',
+          ingr: query,
+          'nutrition-type': 'logging'
+        },
+        timeout: 5000
+      });
+
+      return response.data.hints || [];
+    } catch (apiError) {
+      console.warn('Edamam API no disponible:', apiError.message);
+      return [];
+    }
   } catch (error) {
     console.error('Error al buscar alimentos:', error);
-    throw error;
+    return [];
   }
 };
+
+// Analizar información nutricional de recetas (usa datos locales)
+export const analizarReceta = async (ingredientes) => {
+  try {
+    // Calcular totales de los ingredientes basados en datos locales
+    let totalCalorias = 0;
+    let totalProteinas = 0;
+    let totalCarbohidratos = 0;
+    let totalGrasas = 0;
+
+    for (const ingrediente of ingredientes) {
+      const producto = productosColombianosLocales.find(p =>
+        p.product_name.toLowerCase().includes(ingrediente.toLowerCase())
+      );
+
+      if (producto && producto.nutriments) {
+        totalCalorias += producto.nutriments['energy-kcal_100g'] || 0;
+        totalProteinas += producto.nutriments.proteins_100g || 0;
+        totalCarbohidratos += producto.nutriments.carbohydrates_100g || 0;
+        totalGrasas += producto.nutriments.fat_100g || 0;
+      }
+    }
+
+    return {
+      totalCalorias: Math.round(totalCalorias),
+      totalProteinas: Math.round(totalProteinas * 10) / 10,
+      totalCarbohidratos: Math.round(totalCarbohidratos * 10) / 10,
+      totalGrasas: Math.round(totalGrasas * 10) / 10
+    };
+  } catch (error) {
+    console.error('Error al analizar receta:', error);
+    return {
+      totalCalorias: 0,
+      totalProteinas: 0,
+      totalCarbohidratos: 0,
+      totalGrasas: 0
+    };
+  }
+};
+
 
 // Obtener recomendaciones nutricionales diarias (Colombia)
 export const obtenerRecomendacionesDiarias = (edad, genero, nivelActividad) => {
@@ -76,10 +119,3 @@ export const obtenerRecomendacionesDiarias = (edad, genero, nivelActividad) => {
 
   return recomendaciones;
 };
-
-export default {
-  analizarReceta,
-  buscarAlimentos,
-  obtenerRecomendacionesDiarias
-};
-// ...existing code...

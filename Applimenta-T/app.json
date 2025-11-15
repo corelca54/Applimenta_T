@@ -39,7 +39,8 @@
         {
           "cameraPermission": "Permite a $(PRODUCT_NAME) acceder a tu cámara para escanear códigos de barras de productos."
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }

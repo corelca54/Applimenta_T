@@ -17,6 +17,9 @@ import {
 } from '../services/firebaseService';
 import { buscarProductosColombianos } from '../services/openFoodFactsApi';
 import { obtenerRecomendacionesDiarias } from '../services/edamamApi';
+import { buscarProductosColombianosPorTermino } from '../services/openFoodFactsApi';
+import { productosColombianosLocales } from '../services/colombianProductsData';
+
 import { LinearGradient } from 'expo-linear-gradient';
 
 const HomeScreen = ({ navigation }) => {
@@ -79,13 +82,17 @@ const HomeScreen = ({ navigation }) => {
             try {
               setLoading(true);
               
-              // Buscar productos colombianos
-              const productosColombianos = await buscarProductosColombianos();
+              // Usar productos locales colombianos (siempre disponibles)
+              const productosColombianos = productosColombianosLocales;
               
               if (productosColombianos.length === 0) {
                 Alert.alert('Sin productos', 'No se encontraron productos colombianos');
                 return;
               }
+
+              // Shuffle productos para variedad
+              const shuffled = [...productosColombianos].sort(() => Math.random() - 0.5);
+              
 
               // Distribuir productos por comidas
               const desayuno = productosColombianos.slice(0, 2);
@@ -294,6 +301,7 @@ const HomeScreen = ({ navigation }) => {
         </View>
       </View>
     </ScrollView>
+
   );
 };
 
