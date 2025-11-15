@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { buscarEnProductosLocales, productosColombianosLocales } from './colombianProductsData';
 import { sanitizeSearchQuery, secureLog, secureErrorLog } from '../utils/securityValidators';
+import { buscarAlimentos } from './edamamApi';
 
 const BASE_URL = 'https://es.openfoodfacts.org/api/v2'; // USA VERSIÓN EN ESPAÑOL
 const BASE_URL_EN = 'https://world.openfoodfacts.org/api/v2';
@@ -13,7 +14,8 @@ export const buscarProductos = async (query) => {
     const sanitizedQuery = sanitizeSearchQuery(query);
     
     if (!sanitizedQuery) {
-      return productosColombianosLocales;
+      secureLog('Búsqueda', 'query vacía — devolviendo todos los productos locales');
+      return Array.isArray(productosColombianosLocales) ? productosColombianosLocales : [];
     }
 
     // 1. Buscar primero en datos locales - SIEMPRE FUNCIONA
@@ -35,8 +37,18 @@ export const buscarProductos = async (query) => {
         timeout: 5000
       });
 
-      let productos = (response.data.products || []).filter(p => p.product_name);
-      if (productos.length > 0) {
+      let productos = (response.data.products || []).filter(p => p && p.product_name).map(p => ({
+        product_name: p.product_name,
+        brands: p.brands,
+        nutriments: p.nutriments || {},
+        image_url: p.image_url,
+        code: p.code,
+        categories_tags: p.categories_tags || [],
+        countries_tags: p.countries_tags || [],
+        description: p.description || ''
+      }));
+
+      if (Array.isArray(productos) && productos.length > 0) {
         secureLog('BúsquedaOFF_ES', `Encontrados ${productos.length} productos en Open Food Facts (Español)`);
         return productos;
       }
@@ -56,8 +68,18 @@ export const buscarProductos = async (query) => {
         timeout: 5000
       });
 
-      let productos = (response.data.products || []).filter(p => p.product_name);
-      if (productos.length > 0) {
+      let productos = (response.data.products || []).filter(p => p && p.product_name).map(p => ({
+        product_name: p.product_name,
+        brands: p.brands,
+        nutriments: p.nutriments || {},
+        image_url: p.image_url,
+        code: p.code,
+        categories_tags: p.categories_tags || [],
+        countries_tags: p.countries_tags || [],
+        description: p.description || ''
+      }));
+
+      if (Array.isArray(productos) && productos.length > 0) {
         secureLog('BúsquedaOFF_EN', `Encontrados ${productos.length} productos en Open Food Facts (Inglés)`);
         return productos;
       }
@@ -65,9 +87,36 @@ export const buscarProductos = async (query) => {
       secureErrorLog('OpenFoodFactsEN', err);
     }
 
-    // 4. Si nada funcionó, devolver todos los productos locales como fallback
+    // 4. Intentar Edamam como alternativa si las búsquedas en OFF no devolvieron nada
+    try {
+      const edamamResults = await buscarAlimentos(sanitizedQuery);
+      if (Array.isArray(edamamResults) && edamamResults.length > 0) {
+        // Mapear a formato de producto
+        const productosEdamam = edamamResults.map(item => {
+          // Edamam devuelve hints o alimentos en diferentes formatos
+          const food = item.food || item;
+          return {
+            product_name: food.label || food.name || 'Producto',
+            brands: food.brand || '',
+            nutriments: food.nutrients || {},
+            image_url: food.image || null,
+            code: null,
+            categories_tags: [],
+            countries_tags: [],
+            description: food.category || ''
+          };
+        });
+
+        secureLog('BúsquedaEdamam', `Encontrados ${productosEdamam.length} resultados con Edamam`);
+        return productosEdamam;
+      }
+    } catch (err) {
+      secureErrorLog('EdamamFallback', err);
+    }
+
+    // 5. Si nada funcionó, devolver todos los productos locales como fallback
     secureLog('Fallback', 'Devolviendo todos los productos locales como fallback');
-    return productosColombianosLocales;
+    return Array.isArray(productosColombianosLocales) ? productosColombianosLocales : [];
 
   } catch (error) {
     secureErrorLog('BúsquedaProductos', error);
