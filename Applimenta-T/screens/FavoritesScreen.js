@@ -137,11 +137,11 @@ const FavoritesScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <FlatList
-        data={favoritos}
+        data={Array.isArray(favoritos) ? favoritos : []}
         renderItem={renderFavorito}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
-        ListEmptyComponent={!loading && renderEmpty}
+        ListEmptyComponent={loading ? null : renderEmpty}
         contentContainerStyle={[
           styles.listContainer,
           favoritos.length === 0 && styles.listContainerEmpty

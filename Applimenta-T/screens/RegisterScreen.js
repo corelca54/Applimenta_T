@@ -16,6 +16,12 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '../config/firebaseConfig';
 import { guardarPerfilUsuario } from '../services/firebaseService';
 import { LinearGradient } from 'expo-linear-gradient';
+import { 
+  isValidEmail, 
+  isStrongPassword, 
+  isValidName,
+  secureErrorLog 
+} from '../utils/securityValidators';
 
 const RegisterScreen = ({ navigation }) => {
   const [nombre, setNombre] = useState('');
@@ -31,16 +37,26 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
-    if (!email.includes('@')) {
+    // Validar nombre
+    if (!isValidName(nombre)) {
+      Alert.alert('Error', 'Nombre inválido (mínimo 2 caracteres, máximo 100)');
+      return;
+    }
+
+    // Validar email
+    if (!isValidEmail(email)) {
       Alert.alert('Error', 'Por favor ingresa un email válido');
       return;
     }
 
-    if (password.length < 6) {
-      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+    // Validar contraseña fuerte
+    const passwordValidation = isStrongPassword(password);
+    if (!passwordValidation.isValid) {
+      Alert.alert('Error', passwordValidation.message);
       return;
     }
 
+    // Validar que las contraseñas coincidan
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Las contraseñas no coinciden');
       return;
@@ -78,7 +94,7 @@ const RegisterScreen = ({ navigation }) => {
 
       // La navegación se manejará automáticamente por el listener de auth
     } catch (error) {
-      console.error('Error al registrar:', error);
+      secureErrorLog('RegisterError', error);
       
       let errorMessage = 'Error al crear la cuenta';
       
@@ -94,6 +110,9 @@ const RegisterScreen = ({ navigation }) => {
           break;
         case 'auth/weak-password':
           errorMessage = 'La contraseña es muy débil';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Demasiados intentos. Intenta más tarde';
           break;
         default:
           errorMessage = 'Error al crear la cuenta. Intenta nuevamente';

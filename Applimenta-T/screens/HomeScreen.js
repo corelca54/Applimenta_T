@@ -1,5 +1,5 @@
 // pantallas/HomeScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -29,9 +29,15 @@ const HomeScreen = ({ navigation }) => {
   const [perfil, setPerfil] = useState(null);
   const [recomendaciones, setRecomendaciones] = useState(null);
   const user = auth.currentUser;
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
     cargarDatos();
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   const cargarDatos = async () => {
@@ -40,6 +46,8 @@ const HomeScreen = ({ navigation }) => {
       
       // Cargar perfil del usuario
       const perfilData = await obtenerPerfilUsuario(user.uid);
+      
+      if (!isMountedRef.current) return;
       setPerfil(perfilData);
 
       // Obtener recomendaciones nutricionales
@@ -49,25 +57,36 @@ const HomeScreen = ({ navigation }) => {
           perfilData.genero,
           perfilData.nivelActividad
         );
-        setRecomendaciones(recs);
+        if (isMountedRef.current) {
+          setRecomendaciones(recs);
+        }
       }
 
       // Obtener plan del día
       const fechaHoy = new Date().toISOString().split('T')[0];
       const planData = await obtenerPlanDelDia(user.uid, fechaHoy);
-      setPlan(planData);
+      
+      if (isMountedRef.current) {
+        setPlan(planData);
+      }
 
     } catch (error) {
-      console.error('Error al cargar datos:', error);
+      if (isMountedRef.current) {
+        console.error('Error al cargar datos:', error);
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
     await cargarDatos();
-    setRefreshing(false);
+    if (isMountedRef.current) {
+      setRefreshing(false);
+    }
   };
 
   const generarPlanDiario = async () => {
@@ -86,7 +105,9 @@ const HomeScreen = ({ navigation }) => {
               const productosColombianos = productosColombianosLocales;
               
               if (productosColombianos.length === 0) {
-                Alert.alert('Sin productos', 'No se encontraron productos colombianos');
+                if (isMountedRef.current) {
+                  Alert.alert('Sin productos', 'No se encontraron productos colombianos');
+                }
                 return;
               }
 
@@ -124,6 +145,8 @@ const HomeScreen = ({ navigation }) => {
                 carbohidratos: totalesDesayuno.carbohidratos + totalesAlmuerzo.carbohidratos + totalesCena.carbohidratos + totalesMeriendas.carbohidratos,
                 grasas: totalesDesayuno.grasas + totalesAlmuerzo.grasas + totalesCena.grasas + totalesMeriendas.grasas
               };
+
+              if (!isMountedRef.current) return;
 
               // Crear plan
               const fechaHoy = new Date().toISOString().split('T')[0];
@@ -163,14 +186,20 @@ const HomeScreen = ({ navigation }) => {
                 totalGrasas: Math.round(totalesGenerales.grasas)
               });
 
-              Alert.alert('¡Éxito!', 'Plan de alimentación generado');
-              await cargarDatos();
+              if (isMountedRef.current) {
+                Alert.alert('¡Éxito!', 'Plan de alimentación generado');
+                await cargarDatos();
+              }
               
             } catch (error) {
-              console.error('Error al generar plan:', error);
-              Alert.alert('Error', 'No se pudo generar el plan');
+              if (isMountedRef.current) {
+                console.error('Error al generar plan:', error);
+                Alert.alert('Error', 'No se pudo generar el plan');
+              }
             } finally {
-              setLoading(false);
+              if (isMountedRef.current) {
+                setLoading(false);
+              }
             }
           }
         }

@@ -1,5 +1,5 @@
 // pantallas/SearchScreen.js
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,39 @@ const SearchScreen = ({ navigation }) => {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [buscado, setBuscado] = useState(false);
+  const isMountedRef = useRef(true);
+  const timeoutRef = useRef(null);
+
+  // Cleanup cuando el componente se desmonta o se navega lejos
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      // Limpiar timeout pendiente
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      // Resettear estado
+      setLoading(false);
+      setProductos([]);
+    };
+  }, []);
+
+  // Focus listener para limpiar búsqueda cuando vuelves a la pantalla
+  useEffect(() => {
+    if (!navigation) return;
+    
+    const unsubscribe = navigation.addListener('focus', () => {
+      // Limpiar timeout si hay pendiente
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const realizarBusqueda = async () => {
     if (!busqueda.trim()) {
@@ -30,20 +63,35 @@ const SearchScreen = ({ navigation }) => {
     setBuscado(true);
 
     try {
+      if (isMountedRef.current) {
         const resultados = await buscarProductosColombianosPorTermino(busqueda);
-      setProductos(resultados);
+        // Debug: registrar tipo de resultados para detectar arrays no válidos
+        console.log('[SearchDebug] resultados type:', typeof resultados);
+        if (Array.isArray(resultados)) {
+          console.log('[SearchDebug] resultados length:', resultados.length);
+          console.log('[SearchDebug] sample item types:', resultados.slice(0,5).map(i => typeof i));
+        }
+        
+        if (isMountedRef.current) {
+          setProductos(resultados);
 
-      if (resultados.length === 0) {
-        Alert.alert(
-          'Sin resultados',
-          'No se encontraron productos para tu búsqueda'
-        );
+          if (resultados.length === 0) {
+            Alert.alert(
+              'Sin resultados',
+              'No se encontraron productos para tu búsqueda'
+            );
+          }
+        }
       }
     } catch (error) {
-      console.error('Error en búsqueda:', error);
-      Alert.alert('Error', 'No se pudo realizar la búsqueda');
+      if (isMountedRef.current) {
+        console.error('Error en búsqueda:', error);
+        Alert.alert('Error', 'No se pudo realizar la búsqueda');
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -54,10 +102,21 @@ const SearchScreen = ({ navigation }) => {
   };
 
   const renderProducto = ({ item }) => (
-    <FoodCard
-      producto={item}
-      onPress={() => navigation.navigate('FoodDetail', { producto: item })}
-    />
+    // Protecciones: si por alguna razón el item no es un objeto, mostramos un fallback seguro
+    (typeof item === 'object' && item !== null) ? (
+      <FoodCard
+        producto={item}
+        onPress={() => navigation.navigate('FoodDetail', { producto: item })}
+      />
+    ) : (() => {
+      // Debug: loggear item problemático
+      console.warn('[SearchDebug] renderProducto received non-object item:', item);
+      return (
+        <TouchableOpacity style={styles.cardFallback} onPress={() => {}}>
+          <Text style={styles.cardFallbackText}>{String(item)}</Text>
+        </TouchableOpacity>
+      );
+    })()
   );
 
   const renderHeader = () => (
@@ -71,7 +130,9 @@ const SearchScreen = ({ navigation }) => {
               style={styles.sugerenciaChip}
               onPress={() => {
                 setBusqueda('arepas');
-                setTimeout(() => realizarBusqueda(), 100);
+                timeoutRef.current = setTimeout(() => {
+                  if (isMountedRef.current) realizarBusqueda();
+                }, 100);
               }}
             >
               <Text style={styles.sugerenciaTexto}>🫓 Arepas</Text>
@@ -81,7 +142,9 @@ const SearchScreen = ({ navigation }) => {
               style={styles.sugerenciaChip}
               onPress={() => {
                 setBusqueda('aguacate');
-                setTimeout(() => realizarBusqueda(), 100);
+                timeoutRef.current = setTimeout(() => {
+                  if (isMountedRef.current) realizarBusqueda();
+                }, 100);
               }}
             >
               <Text style={styles.sugerenciaTexto}>🥑 Aguacate</Text>
@@ -91,7 +154,9 @@ const SearchScreen = ({ navigation }) => {
               style={styles.sugerenciaChip}
               onPress={() => {
                 setBusqueda('chocolate');
-                setTimeout(() => realizarBusqueda(), 100);
+                timeoutRef.current = setTimeout(() => {
+                  if (isMountedRef.current) realizarBusqueda();
+                }, 100);
               }}
             >
               <Text style={styles.sugerenciaTexto}>🍫 Chocolate</Text>
@@ -101,7 +166,9 @@ const SearchScreen = ({ navigation }) => {
               style={styles.sugerenciaChip}
               onPress={() => {
                 setBusqueda('café');
-                setTimeout(() => realizarBusqueda(), 100);
+                timeoutRef.current = setTimeout(() => {
+                  if (isMountedRef.current) realizarBusqueda();
+                }, 100);
               }}
             >
               <Text style={styles.sugerenciaTexto}>☕ Café</Text>
@@ -111,7 +178,9 @@ const SearchScreen = ({ navigation }) => {
               style={styles.sugerenciaChip}
               onPress={() => {
                 setBusqueda('frijoles');
-                setTimeout(() => realizarBusqueda(), 100);
+                timeoutRef.current = setTimeout(() => {
+                  if (isMountedRef.current) realizarBusqueda();
+                }, 100);
               }}
             >
               <Text style={styles.sugerenciaTexto}>🫘 Frijoles</Text>
@@ -121,7 +190,9 @@ const SearchScreen = ({ navigation }) => {
               style={styles.sugerenciaChip}
               onPress={() => {
                 setBusqueda('maíz');
-                setTimeout(() => realizarBusqueda(), 100);
+                timeoutRef.current = setTimeout(() => {
+                  if (isMountedRef.current) realizarBusqueda();
+                }, 100);
               }}
             >
               <Text style={styles.sugerenciaTexto}>🌽 Maíz</Text>
@@ -177,7 +248,7 @@ const SearchScreen = ({ navigation }) => {
 
       {/* Lista de productos */}
       <FlatList
-        data={productos}
+        data={Array.isArray(productos) ? productos : []}
         renderItem={renderProducto}
         keyExtractor={(item, index) => item.code || item.id || index.toString()}
         ListHeaderComponent={renderHeader}
@@ -314,6 +385,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#7f8c8d',
     textAlign: 'center'
+  }
+  ,
+  cardFallback: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  cardFallbackText: {
+    color: '#2c3e50',
+    fontSize: 14
   }
 });
 

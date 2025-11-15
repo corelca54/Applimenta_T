@@ -15,6 +15,7 @@ import {
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebaseConfig';
 import { LinearGradient } from 'expo-linear-gradient';
+import { isValidEmail, secureErrorLog } from '../utils/securityValidators';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -28,8 +29,15 @@ const LoginScreen = ({ navigation }) => {
       return;
     }
 
-    if (!email.includes('@')) {
+    // Validación segura de email
+    if (!isValidEmail(email)) {
       Alert.alert('Error', 'Por favor ingresa un email válido');
+      return;
+    }
+
+    // Validación de longitud de contraseña
+    if (password.length < 6) {
+      Alert.alert('Error', 'Contraseña inválida');
       return;
     }
 
@@ -39,7 +47,7 @@ const LoginScreen = ({ navigation }) => {
       await signInWithEmailAndPassword(auth, email, password);
       // La navegación se manejará automáticamente por el listener de auth
     } catch (error) {
-      console.error('Error al iniciar sesión:', error);
+      secureErrorLog('LoginError', error);
       
       let errorMessage = 'Error al iniciar sesión';
       
@@ -58,6 +66,9 @@ const LoginScreen = ({ navigation }) => {
           break;
         case 'auth/invalid-credential':
           errorMessage = 'Credenciales inválidas. Verifica tu email y contraseña';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Demasiados intentos. Intenta más tarde';
           break;
         default:
           errorMessage = 'Error al iniciar sesión. Intenta nuevamente';

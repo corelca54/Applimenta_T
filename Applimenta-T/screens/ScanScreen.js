@@ -1,5 +1,5 @@
 // pantallas/ScanScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -19,9 +19,17 @@ const ScanScreen = ({ navigation }) => {
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
     requestPermission();
+
+    return () => {
+      isMountedRef.current = false;
+      setScanned(false);
+      setScanning(false);
+    };
   }, []);
 
   const requestPermission = async () => {
@@ -38,18 +46,23 @@ const ScanScreen = ({ navigation }) => {
 
   const handleBarCodeScanned = async ({ type, data }) => {
     if (scanning) return;
+    if (!isMountedRef.current) return;
 
     setScanned(true);
     setScanning(true);
 
     try {
-      // Buscar en productos locales colombianos primero (códigos 999000000...)
+      if (!isMountedRef.current) return;
+      
+      // Buscar en productos locales primero
       let producto = productosColombianosLocales.find(p => p.code === data);
 
-      if (!producto) {
+      if (!producto && isMountedRef.current) {
         // Si no está en locales, buscar en Open Food Facts
         producto = await buscarPorCodigoBarras(data);
       }
+
+      if (!isMountedRef.current) return;
 
       if (producto) {
         Alert.alert(
@@ -59,50 +72,67 @@ const ScanScreen = ({ navigation }) => {
             {
               text: 'Ver Detalles',
               onPress: () => {
-                navigation.navigate('FoodDetail', { producto });
-                setScanned(false);
-                setScanning(false);
+                if (isMountedRef.current) {
+                  setScanned(false);
+                  setScanning(false);
+                  navigation.navigate('FoodDetail', { producto });
+                }
               }
             },
             {
               text: 'Escanear Otro',
               onPress: () => {
-                setScanned(false);
-                setScanning(false);
+                if (isMountedRef.current) {
+                  setScanned(false);
+                  setScanning(false);
+                }
               }
             }
           ]
         );
       } else {
+        if (isMountedRef.current) {
+          Alert.alert(
+            'Producto No Encontrado',
+            `No se encontró información para: ${data}\n\nCódigos de prueba disponibles:\n999000000001-020`,
+            [
+              {
+                text: 'Escanear Otro',
+                onPress: () => {
+                  if (isMountedRef.current) {
+                    setScanned(false);
+                    setScanning(false);
+                  }
+                }
+              }
+            ]
+          );
+        }
+      }
+    } catch (error) {
+      if (isMountedRef.current) {
+        console.warn('Error al buscar producto:', error.message);
         Alert.alert(
-          'Producto No Encontrado',
-          `No se encontró información para: ${data}\n\nCódigos de prueba disponibles:\n999000000001-010`,
+          'Error',
+          'No se pudo buscar el producto',
           [
             {
-              text: 'Escanear Otro',
+              text: 'Reintentar',
               onPress: () => {
-                setScanned(false);
-                setScanning(false);
+                if (isMountedRef.current) {
+                  setScanned(false);
+                  setScanning(false);
+                }
               }
             }
           ]
         );
       }
-    } catch (error) {
-      console.error('Error al buscar producto:', error);
-      Alert.alert(
-        'Error',
-        'No se pudo buscar el producto',
-        [
-          {
-            text: 'Reintentar',
-            onPress: () => {
-              setScanned(false);
-              setScanning(false);
-            }
-          }
-        ]
-      );
+    } finally {
+      if (isMountedRef.current) {
+        setScanned(false);
+        setScanning(false);
+      }
     }
   };
 

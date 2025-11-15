@@ -20,13 +20,22 @@ const FoodDetailScreen = ({ route, navigation }) => {
   const user = auth.currentUser;
 
   useEffect(() => {
-    verificarFavorito();
-  }, []);
+    // Solo verificar si hay usuario y producto
+    if (user && producto) {
+      verificarFavorito();
+    }
+  }, [user?.uid, producto?.code, producto?.id]);
 
   const verificarFavorito = async () => {
-    if (producto.code || producto.id) {
+    try {
+      if (!user || !user.uid) return;
+      if (!producto || (!producto.code && !producto.id)) return;
+      
       const favorito = await estaEnFavoritos(user.uid, producto.code || producto.id);
       setEsFavorito(favorito);
+    } catch (error) {
+      console.warn('Error verificando favorito:', error.message);
+      setEsFavorito(false);
     }
   };
   // Validar que el producto tenga información mínima requerida
@@ -46,9 +55,14 @@ const FoodDetailScreen = ({ route, navigation }) => {
 
 
   const toggleFavorito = async () => {
-    setLoading(true);
-    
     try {
+      if (!user || !user.uid) {
+        Alert.alert('Error', 'Debes iniciar sesión');
+        return;
+      }
+      
+      setLoading(true);
+      
       if (esFavorito) {
         Alert.alert('Información', 'Para eliminar de favoritos, ve a la pantalla de Favoritos');
       } else {
@@ -57,8 +71,8 @@ const FoodDetailScreen = ({ route, navigation }) => {
         Alert.alert('¡Éxito!', 'Producto agregado a favoritos');
       }
     } catch (error) {
-      console.error('Error al manejar favorito:', error);
-      Alert.alert('Error', 'No se pudo agregar a favoritos');
+      console.warn('Error en favorito:', error.message);
+      Alert.alert('Error', 'No se pudo procesar');
     } finally {
       setLoading(false);
     }
