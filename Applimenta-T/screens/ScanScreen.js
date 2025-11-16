@@ -26,15 +26,14 @@ const ScanScreen = ({ navigation }) => {
     requestPermission();
 
     return () => {
+      // Marcar desmontado y evitar setState en cleanup
       isMountedRef.current = false;
-      setScanned(false);
-      setScanning(false);
     };
   }, []);
 
   const requestPermission = async () => {
     const { status } = await BarCodeScanner.requestPermissionsAsync();
-    setHasPermission(status === 'granted');
+    if (isMountedRef.current) setHasPermission(status === 'granted');
 
     if (status !== 'granted') {
       Alert.alert(

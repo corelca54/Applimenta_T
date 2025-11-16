@@ -1,5 +1,5 @@
 // pantallas/FavoritesScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,15 +18,21 @@ const FavoritesScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const user = auth.currentUser;
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
     cargarFavoritos();
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   // Recargar favoritos cuando la pantalla obtiene foco
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      cargarFavoritos();
+      if (isMountedRef.current) cargarFavoritos();
     });
 
     return unsubscribe;
@@ -34,21 +40,27 @@ const FavoritesScreen = ({ navigation }) => {
 
   const cargarFavoritos = async () => {
     try {
-      setLoading(true);
+      if (!user) {
+        setFavoritos([]);
+        setLoading(false);
+        return;
+      }
+
+      if (isMountedRef.current) setLoading(true);
       const favoritosData = await obtenerFavoritos(user.uid);
-      setFavoritos(favoritosData);
+      if (isMountedRef.current) setFavoritos(favoritosData);
     } catch (error) {
       console.error('Error al cargar favoritos:', error);
       Alert.alert('Error', 'No se pudieron cargar los favoritos');
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
     }
   };
 
   const onRefresh = async () => {
-    setRefreshing(true);
+    if (isMountedRef.current) setRefreshing(true);
     await cargarFavoritos();
-    setRefreshing(false);
+    if (isMountedRef.current) setRefreshing(false);
   };
 
   const handleEliminarFavorito = (favorito) => {
@@ -75,7 +87,7 @@ const FavoritesScreen = ({ navigation }) => {
     );
   };
 
-  const renderFavorito = ({ item }) => (
+  const renderFavorito = useCallback(({ item }) => (
     <View style={styles.favoritoContainer}>
       <View style={styles.foodCardContainer}>
         <FoodCard
@@ -105,7 +117,7 @@ const FavoritesScreen = ({ navigation }) => {
         <Text style={styles.deleteButtonText}>🗑️ Eliminar</Text>
       </TouchableOpacity>
     </View>
-  );
+  ), [navigation]);
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
@@ -139,7 +151,7 @@ const FavoritesScreen = ({ navigation }) => {
       <FlatList
         data={Array.isArray(favoritos) ? favoritos : []}
         renderItem={renderFavorito}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => (item && (item.id || item.productoId)) || index.toString()}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={loading ? null : renderEmpty}
         contentContainerStyle={[

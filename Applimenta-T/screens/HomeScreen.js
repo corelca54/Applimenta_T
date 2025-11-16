@@ -1,5 +1,5 @@
 // pantallas/HomeScreen.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,9 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Alert
+  Alert,
+  FlatList,
+  ActivityIndicator
 } from 'react-native';
 import { auth } from '../config/firebaseConfig';
 import { 
@@ -17,17 +19,19 @@ import {
 } from '../services/firebaseService';
 import { buscarProductosColombianos } from '../services/openFoodFactsApi';
 import { obtenerRecomendacionesDiarias } from '../services/edamamApi';
-import { buscarProductosColombianosPorTermino } from '../services/openFoodFactsApi';
 import { productosColombianosLocales } from '../services/colombianProductsData';
+import FoodCard from '../components/FoodCard';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
 const HomeScreen = ({ navigation }) => {
+  const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [plan, setPlan] = useState(null);
   const [perfil, setPerfil] = useState(null);
   const [recomendaciones, setRecomendaciones] = useState(null);
+  const [showProducts, setShowProducts] = useState(true);
   const user = auth.currentUser;
   const isMountedRef = useRef(true);
 
@@ -42,7 +46,19 @@ const HomeScreen = ({ navigation }) => {
 
   const cargarDatos = async () => {
     try {
-      setLoading(true);
+      if (isMountedRef.current) setLoading(true);
+      
+      // Cargar productos
+      const productosData = await buscarProductosColombianos();
+      if (isMountedRef.current) {
+        const productosArray = Array.isArray(productosData) ? productosData : productosColombianosLocales;
+        setProductos(productosArray);
+      }
+
+      if (!user) {
+        if (isMountedRef.current) setLoading(false);
+        return;
+      }
       
       // Cargar perfil del usuario
       const perfilData = await obtenerPerfilUsuario(user.uid);
@@ -73,6 +89,7 @@ const HomeScreen = ({ navigation }) => {
     } catch (error) {
       if (isMountedRef.current) {
         console.error('Error al cargar datos:', error);
+        setProductos(productosColombianosLocales);
       }
     } finally {
       if (isMountedRef.current) {
@@ -82,11 +99,9 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const onRefresh = async () => {
-    setRefreshing(true);
+    if (isMountedRef.current) setRefreshing(true);
     await cargarDatos();
-    if (isMountedRef.current) {
-      setRefreshing(false);
-    }
+    if (isMountedRef.current) setRefreshing(false);
   };
 
   const generarPlanDiario = async () => {
@@ -99,9 +114,6 @@ const HomeScreen = ({ navigation }) => {
           text: 'Generar',
           onPress: async () => {
             try {
-              setLoading(true);
-              
-              // Usar productos locales colombianos (siempre disponibles)
               const productosColombianos = productosColombianosLocales;
               
               if (productosColombianos.length === 0) {
@@ -110,10 +122,6 @@ const HomeScreen = ({ navigation }) => {
                 }
                 return;
               }
-
-              // Shuffle productos para variedad
-              const shuffled = [...productosColombianos].sort(() => Math.random() - 0.5);
-              
 
               // Distribuir productos por comidas
               const desayuno = productosColombianos.slice(0, 2);
@@ -196,10 +204,6 @@ const HomeScreen = ({ navigation }) => {
                 console.error('Error al generar plan:', error);
                 Alert.alert('Error', 'No se pudo generar el plan');
               }
-            } finally {
-              if (isMountedRef.current) {
-                setLoading(false);
-              }
             }
           }
         }
@@ -226,6 +230,22 @@ const HomeScreen = ({ navigation }) => {
     </View>
   );
 
+  const renderProducto = useCallback(({ item }) => (
+    <FoodCard
+      producto={item}
+      onPress={() => navigation.navigate('FoodDetail', { producto: item })}
+    />
+  ), [navigation]);
+
+  if (loading && productos.length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#27ae60" />
+        <Text style={styles.loadingText}>Cargando...</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={styles.container}
@@ -246,61 +266,96 @@ const HomeScreen = ({ navigation }) => {
       </LinearGradient>
 
       <View style={styles.content}>
-        {/* Resumen nutricional */}
-        {plan && (
-          <View style={styles.resumenCard}>
-            <Text style={styles.resumenTitulo}>Resumen del Día</Text>
-            <View style={styles.resumenGrid}>
-              <View style={styles.resumenItem}>
-                <Text style={styles.resumenValor}>{plan.totalCalorias}</Text>
-                <Text style={styles.resumenLabel}>Calorías</Text>
+        {/* Botones de vista */}
+        <View style={styles.viewToggle}>
+          <TouchableOpacity
+            style={[styles.toggleButton, showProducts && styles.toggleButtonActive]}
+            onPress={() => setShowProducts(true)}
+          >
+            <Text style={[styles.toggleButtonText, showProducts && styles.toggleButtonTextActive]}>
+              📋 Productos
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleButton, !showProducts && styles.toggleButtonActive]}
+            onPress={() => setShowProducts(false)}
+          >
+            <Text style={[styles.toggleButtonText, !showProducts && styles.toggleButtonTextActive]}>
+              🍽️ Plan
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Vista de Productos */}
+        {showProducts ? (
+          <View style={styles.productsSection}>
+            <Text style={styles.sectionTitle}>Productos Disponibles ({productos.length})</Text>
+            <FlatList
+              scrollEnabled={false}
+              data={productos}
+              renderItem={renderProducto}
+              keyExtractor={(item, index) => (item && (String(item.code) || String(item.id))) || index.toString()}
+              contentContainerStyle={styles.listContainer}
+            />
+          </View>
+        ) : (
+          /* Vista de Plan */
+          <View style={styles.planSection}>
+            {/* Resumen nutricional */}
+            {plan && (
+              <View style={styles.resumenCard}>
+                <Text style={styles.resumenTitulo}>Resumen del Día</Text>
+                <View style={styles.resumenGrid}>
+                  <View style={styles.resumenItem}>
+                    <Text style={styles.resumenValor}>{plan.totalCalorias}</Text>
+                    <Text style={styles.resumenLabel}>Calorías</Text>
+                  </View>
+                  <View style={styles.resumenItem}>
+                    <Text style={styles.resumenValor}>{plan.totalProteinas}g</Text>
+                    <Text style={styles.resumenLabel}>Proteínas</Text>
+                  </View>
+                  <View style={styles.resumenItem}>
+                    <Text style={styles.resumenValor}>{plan.totalCarbohidratos}g</Text>
+                    <Text style={styles.resumenLabel}>Carbohidratos</Text>
+                  </View>
+                  <View style={styles.resumenItem}>
+                    <Text style={styles.resumenValor}>{plan.totalGrasas}g</Text>
+                    <Text style={styles.resumenLabel}>Grasas</Text>
+                  </View>
+                </View>
               </View>
-              <View style={styles.resumenItem}>
-                <Text style={styles.resumenValor}>{plan.totalProteinas}g</Text>
-                <Text style={styles.resumenLabel}>Proteínas</Text>
-              </View>
-              <View style={styles.resumenItem}>
-                <Text style={styles.resumenValor}>{plan.totalCarbohidratos}g</Text>
-                <Text style={styles.resumenLabel}>Carbohidratos</Text>
-              </View>
-              <View style={styles.resumenItem}>
-                <Text style={styles.resumenValor}>{plan.totalGrasas}g</Text>
-                <Text style={styles.resumenLabel}>Grasas</Text>
-              </View>
+            )}
+
+            {/* Plan de alimentación */}
+            <View style={styles.planHeader}>
+              <Text style={styles.planTitulo}>Plan de Alimentación</Text>
+              <TouchableOpacity
+                style={styles.generarButton}
+                onPress={generarPlanDiario}
+                disabled={loading}
+              >
+                <Text style={styles.generarButtonText}>
+                  {plan ? 'Regenerar' : 'Generar Plan'}
+                </Text>
+              </TouchableOpacity>
             </View>
+
+            {plan ? (
+              <>
+                <ComidaCard titulo="Desayuno" productos={plan.desayuno} icono="🌅" />
+                <ComidaCard titulo="Almuerzo" productos={plan.almuerzo} icono="🍽️" />
+                <ComidaCard titulo="Cena" productos={plan.cena} icono="🌙" />
+                <ComidaCard titulo="Meriendas" productos={plan.meriendas} icono="🍎" />
+              </>
+            ) : (
+              <View style={styles.sinPlanContainer}>
+                <Text style={styles.sinPlanTexto}>
+                  No tienes un plan para hoy. Genera uno con productos colombianos.
+                </Text>
+              </View>
+            )}
           </View>
         )}
-
-        {/* Plan de alimentación */}
-        <View style={styles.planSection}>
-          <View style={styles.planHeader}>
-            <Text style={styles.planTitulo}>Plan de Alimentación</Text>
-            <TouchableOpacity
-              style={styles.generarButton}
-              onPress={generarPlanDiario}
-              disabled={loading}
-            >
-              <Text style={styles.generarButtonText}>
-                {plan ? 'Regenerar' : 'Generar Plan'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {plan ? (
-            <>
-              <ComidaCard titulo="Desayuno" productos={plan.desayuno} icono="🌅" />
-              <ComidaCard titulo="Almuerzo" productos={plan.almuerzo} icono="🍽️" />
-              <ComidaCard titulo="Cena" productos={plan.cena} icono="🌙" />
-              <ComidaCard titulo="Meriendas" productos={plan.meriendas} icono="🍎" />
-            </>
-          ) : (
-            <View style={styles.sinPlanContainer}>
-              <Text style={styles.sinPlanTexto}>
-                No tienes un plan para hoy. Genera uno con productos colombianos.
-              </Text>
-            </View>
-          )}
-        </View>
 
         {/* Accesos rápidos */}
         <View style={styles.accionesRapidas}>
@@ -309,7 +364,7 @@ const HomeScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('Search')}
           >
             <Text style={styles.accionIcono}>🔍</Text>
-            <Text style={styles.accionTexto}>Buscar Alimentos</Text>
+            <Text style={styles.accionTexto}>Buscar</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -330,7 +385,6 @@ const HomeScreen = ({ navigation }) => {
         </View>
       </View>
     </ScrollView>
-
   );
 };
 
@@ -338,6 +392,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa'
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa'
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#2c3e50',
+    fontWeight: '600'
   },
   header: {
     padding: 20,
@@ -359,6 +425,45 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16
+  },
+  viewToggle: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    gap: 8
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center'
+  },
+  toggleButtonActive: {
+    backgroundColor: '#27ae60'
+  },
+  toggleButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7f8c8d'
+  },
+  toggleButtonTextActive: {
+    color: '#fff'
+  },
+  productsSection: {
+    marginBottom: 16
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#2c3e50',
+    marginBottom: 12
+  },
+  listContainer: {
+    paddingBottom: 8
+  },
+  planSection: {
+    marginBottom: 16
   },
   resumenCard: {
     backgroundColor: '#fff',
@@ -394,9 +499,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#7f8c8d'
   },
-  planSection: {
-    marginBottom: 16
-  },
   planHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -404,7 +506,7 @@ const styles = StyleSheet.create({
     marginBottom: 16
   },
   planTitulo: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: '#2c3e50'
   },
@@ -481,13 +583,13 @@ const styles = StyleSheet.create({
   accionesRapidas: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8
+    marginTop: 16
   },
   accionButton: {
     flex: 1,
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     marginHorizontal: 4,
     alignItems: 'center',
     shadowColor: '#000',
@@ -497,11 +599,11 @@ const styles = StyleSheet.create({
     elevation: 2
   },
   accionIcono: {
-    fontSize: 32,
-    marginBottom: 8
+    fontSize: 28,
+    marginBottom: 4
   },
   accionTexto: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: '#2c3e50',
     textAlign: 'center'

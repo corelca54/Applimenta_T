@@ -1,5 +1,5 @@
 // pantallas/SearchScreen.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -32,9 +32,6 @@ const SearchScreen = ({ navigation }) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      // Resettear estado
-      setLoading(false);
-      setProductos([]);
     };
   }, []);
 
@@ -101,23 +98,25 @@ const SearchScreen = ({ navigation }) => {
     setBuscado(false);
   };
 
-  const renderProducto = ({ item }) => (
+  const renderProducto = useCallback(({ item }) => {
     // Protecciones: si por alguna razón el item no es un objeto, mostramos un fallback seguro
-    (typeof item === 'object' && item !== null) ? (
-      <FoodCard
-        producto={item}
-        onPress={() => navigation.navigate('FoodDetail', { producto: item })}
-      />
-    ) : (() => {
-      // Debug: loggear item problemático
-      console.warn('[SearchDebug] renderProducto received non-object item:', item);
+    if (typeof item === 'object' && item !== null) {
       return (
-        <TouchableOpacity style={styles.cardFallback} onPress={() => {}}>
-          <Text style={styles.cardFallbackText}>{String(item)}</Text>
-        </TouchableOpacity>
+        <FoodCard
+          producto={item}
+          onPress={() => navigation.navigate('FoodDetail', { producto: item })}
+        />
       );
-    })()
-  );
+    }
+
+    // Debug: loggear item problemático
+    console.warn('[SearchDebug] renderProducto received non-object item:', item);
+    return (
+      <TouchableOpacity style={styles.cardFallback} onPress={() => {}}>
+        <Text style={styles.cardFallbackText}>{String(item)}</Text>
+      </TouchableOpacity>
+    );
+  }, [navigation]);
 
   const renderHeader = () => (
     <View>
@@ -250,7 +249,7 @@ const SearchScreen = ({ navigation }) => {
       <FlatList
         data={Array.isArray(productos) ? productos : []}
         renderItem={renderProducto}
-        keyExtractor={(item, index) => item.code || item.id || index.toString()}
+        keyExtractor={(item, index) => (item && (String(item.code) || String(item.id))) || index.toString()}
         ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}

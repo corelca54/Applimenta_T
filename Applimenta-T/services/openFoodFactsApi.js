@@ -7,6 +7,24 @@ import { buscarAlimentos } from './edamamApi';
 const BASE_URL = 'https://es.openfoodfacts.org/api/v2'; // USA VERSIÓN EN ESPAÑOL
 const BASE_URL_EN = 'https://world.openfoodfacts.org/api/v2';
 
+// Validar y normalizar un producto a formato seguro
+const normalizarProducto = (p) => {
+  if (!p || typeof p !== 'object') return null;
+  
+  const producto = {
+    product_name: String(p.product_name || p.nombre || 'Producto sin nombre').trim(),
+    brands: String(p.brands || p.marca || 'Sin marca').trim(),
+    nutriments: (p.nutriments && typeof p.nutriments === 'object') ? p.nutriments : {},
+    image_url: (p.image_url && typeof p.image_url === 'string') ? p.image_url : 'https://via.placeholder.com/150',
+    code: (p.code && typeof p.code === 'string') ? p.code : null,
+    categories_tags: Array.isArray(p.categories_tags) ? p.categories_tags.map(c => String(c)) : [],
+    countries_tags: Array.isArray(p.countries_tags) ? p.countries_tags.map(c => String(c)) : [],
+    description: String(p.description || p.descripcion || '').trim()
+  };
+  
+  return producto;
+};
+
 // Buscar productos con múltiples intentos - PRIORIZA DATOS LOCALES
 export const buscarProductos = async (query) => {
   try {
@@ -37,16 +55,7 @@ export const buscarProductos = async (query) => {
         timeout: 5000
       });
 
-      let productos = (response.data.products || []).filter(p => p && p.product_name).map(p => ({
-        product_name: p.product_name,
-        brands: p.brands,
-        nutriments: p.nutriments || {},
-        image_url: p.image_url,
-        code: p.code,
-        categories_tags: p.categories_tags || [],
-        countries_tags: p.countries_tags || [],
-        description: p.description || ''
-      }));
+      let productos = (response.data.products || []).filter(p => p && p.product_name).map(normalizarProducto).filter(p => p !== null);
 
       if (Array.isArray(productos) && productos.length > 0) {
         secureLog('BúsquedaOFF_ES', `Encontrados ${productos.length} productos en Open Food Facts (Español)`);
@@ -68,16 +77,7 @@ export const buscarProductos = async (query) => {
         timeout: 5000
       });
 
-      let productos = (response.data.products || []).filter(p => p && p.product_name).map(p => ({
-        product_name: p.product_name,
-        brands: p.brands,
-        nutriments: p.nutriments || {},
-        image_url: p.image_url,
-        code: p.code,
-        categories_tags: p.categories_tags || [],
-        countries_tags: p.countries_tags || [],
-        description: p.description || ''
-      }));
+      let productos = (response.data.products || []).filter(p => p && p.product_name).map(normalizarProducto).filter(p => p !== null);
 
       if (Array.isArray(productos) && productos.length > 0) {
         secureLog('BúsquedaOFF_EN', `Encontrados ${productos.length} productos en Open Food Facts (Inglés)`);
@@ -95,17 +95,17 @@ export const buscarProductos = async (query) => {
         const productosEdamam = edamamResults.map(item => {
           // Edamam devuelve hints o alimentos en diferentes formatos
           const food = item.food || item;
-          return {
-            product_name: food.label || food.name || 'Producto',
-            brands: food.brand || '',
-            nutriments: food.nutrients || {},
-            image_url: food.image || null,
+          return normalizarProducto({
+            product_name: food.label || food.name,
+            brands: food.brand,
+            nutriments: food.nutrients,
+            image_url: food.image,
             code: null,
             categories_tags: [],
             countries_tags: [],
-            description: food.category || ''
-          };
-        });
+            description: food.category
+          });
+        }).filter(p => p !== null);
 
         secureLog('BúsquedaEdamam', `Encontrados ${productosEdamam.length} resultados con Edamam`);
         return productosEdamam;

@@ -1,5 +1,5 @@
 // pantallas/FoodDetailScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,12 +18,18 @@ const FoodDetailScreen = ({ route, navigation }) => {
   const [esFavorito, setEsFavorito] = useState(false);
   const [loading, setLoading] = useState(false);
   const user = auth.currentUser;
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
     // Solo verificar si hay usuario y producto
+    isMountedRef.current = true;
     if (user && producto) {
       verificarFavorito();
     }
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [user?.uid, producto?.code, producto?.id]);
 
   const verificarFavorito = async () => {
@@ -32,10 +38,10 @@ const FoodDetailScreen = ({ route, navigation }) => {
       if (!producto || (!producto.code && !producto.id)) return;
       
       const favorito = await estaEnFavoritos(user.uid, producto.code || producto.id);
-      setEsFavorito(favorito);
+      if (isMountedRef.current) setEsFavorito(favorito);
     } catch (error) {
       console.warn('Error verificando favorito:', error.message);
-      setEsFavorito(false);
+      if (isMountedRef.current) setEsFavorito(false);
     }
   };
   // Validar que el producto tenga información mínima requerida
@@ -61,20 +67,22 @@ const FoodDetailScreen = ({ route, navigation }) => {
         return;
       }
       
-      setLoading(true);
+      if (isMountedRef.current) setLoading(true);
       
       if (esFavorito) {
         Alert.alert('Información', 'Para eliminar de favoritos, ve a la pantalla de Favoritos');
       } else {
         await agregarAFavoritos(user.uid, producto);
-        setEsFavorito(true);
-        Alert.alert('¡Éxito!', 'Producto agregado a favoritos');
+        if (isMountedRef.current) {
+          setEsFavorito(true);
+          Alert.alert('¡Éxito!', 'Producto agregado a favoritos');
+        }
       }
     } catch (error) {
       console.warn('Error en favorito:', error.message);
       Alert.alert('Error', 'No se pudo procesar');
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
     }
   };
 
