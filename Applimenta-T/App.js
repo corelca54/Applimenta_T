@@ -21,6 +21,7 @@ import ScanScreen from './screens/ScanScreen';
 import FoodDetailScreen from './screens/FoodDetailScreen';
 import FavoritesScreen from './screens/FavoritesScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import RecipeDetailScreen from './screens/RecipeDetailScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -216,9 +217,22 @@ function AppStack() {
           headerTintColor: '#2c3e50'
         }}
       />
+      <Stack.Screen
+        name="RecipeDetail"
+        component={RecipeDetailScreen}
+        options={{
+          headerTitle: 'Detalle de la Receta',
+          headerStyle: {
+            backgroundColor: '#fff'
+          },
+          headerTintColor: '#2c3e50'
+        }}
+      />
     </Stack.Navigator>
+    
   );
 }
+
 
 export default function App() {
   const [user, setUser] = useState(null);

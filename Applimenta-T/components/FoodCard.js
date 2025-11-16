@@ -34,11 +34,15 @@ const FoodCard = ({ producto, onPress }) => {
             <Text style={styles.caloriasTexto}>{Math.round(calorias)} kcal</Text>
           </View>
           
-          {nutrientes.proteins_100g && (
+          {/* --- ESTA ES LA LÍNEA CORREGIDA --- */}
+          {/* Usamos un ternario (? :) para evitar el "bug del cero" */}
+          {nutrientes.proteins_100g ? (
             <Text style={styles.nutrienteInfo}>
               Proteínas: {Math.round(nutrientes.proteins_100g)}g
             </Text>
-          )}
+          ) : null}
+          {/* ---------------------------------- */}
+          
         </View>
       </View>
     </TouchableOpacity>

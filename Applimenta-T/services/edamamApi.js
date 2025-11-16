@@ -60,7 +60,7 @@ export const buscarRecetas = async (query) => {
         app_id: RECIPE_API_ID,
         app_key: RECIPE_API_KEY,
         q: query,
-        health: 'health' // Filtro para recetas saludables
+        //health: 'health' // Filtro para recetas saludables
       },
       timeout: 8000
     });

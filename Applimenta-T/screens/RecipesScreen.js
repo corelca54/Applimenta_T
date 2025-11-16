@@ -96,10 +96,9 @@ export default function RecipesScreen({ navigation }) {
           <RecipeCard 
             recipe={item} 
             onPress={() => {
-              // Aquí puedes navegar a un detalle de receta
-              // Por ahora solo mostraremos un log
-              console.log("Receta seleccionada:", item.label);
-              // navigation.navigate('RecipeDetail', { recipe: item });
+              // --- ¡CAMBIO APLICADO! ---
+              // Ahora esto navega a la pantalla de detalle
+              navigation.navigate('RecipeDetail', { recipe: item });
             }} 
           />
         )}

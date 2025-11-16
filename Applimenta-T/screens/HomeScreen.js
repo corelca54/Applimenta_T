@@ -49,10 +49,9 @@ const HomeScreen = ({ navigation }) => {
       if (isMountedRef.current) setLoading(true);
       
       // Cargar productos
-      const productosData = await buscarProductosColombianos();
       if (isMountedRef.current) {
-        const productosArray = Array.isArray(productosData) ? productosData : productosColombianosLocales;
-        setProductos(productosArray);
+        // Ahora cargamos directamente del archivo que acabamos de mejorar
+        setProductos(productosColombianosLocales); 
       }
 
       if (!user) {
