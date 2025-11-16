@@ -24,9 +24,13 @@ const NutritionInfo = ({ nutrientes, porcion = 100 }) => {
         <Text style={styles.nutrienteValor}>
           {Math.round(valor * 10) / 10}{unidad}
         </Text>
-        {porcentajeVD && (
+        
+        {/* --- ESTA ES LA LÍNEA CORREGIDA --- */}
+        {porcentajeVD ? (
           <Text style={styles.porcentajeVD}>{porcentajeVD}% VD</Text>
-        )}
+        ) : null}
+        {/* ---------------------------------- */}
+
       </View>
     </View>
   );
@@ -34,15 +38,15 @@ const NutritionInfo = ({ nutrientes, porcion = 100 }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.titulo}>InformaciÃģn Nutricional</Text>
+        <Text style={styles.titulo}>Información Nutricional</Text>
         <Text style={styles.porcion}>Por {porcion}g</Text>
       </View>
 
       <View style={styles.divider} />
 
-      {/* CalorÃ­as - Destacado */}
+      {/* Calorías - Destacado */}
       <View style={styles.caloriasContainer}>
-        <Text style={styles.caloriasLabel}>CalorÃ­as</Text>
+        <Text style={styles.caloriasLabel}>Calorías</Text>
         <Text style={styles.caloriasValor}>{Math.round(calorias)}</Text>
       </View>
 
@@ -65,10 +69,11 @@ const NutritionInfo = ({ nutrientes, porcion = 100 }) => {
         porcentajeVD={calcularPorcentajeVD(carbohidratos, 275)}
       />
       
+      {/* Esta condición es segura porque (azucares > 0) es booleano */}
       {azucares > 0 && (
         <View style={styles.subNutriente}>
           <NutrienteRow 
-            nombre="  AzÃšcares" 
+            nombre="  Azúcares" 
             valor={azucares} 
             unidad="g"
           />
@@ -76,7 +81,7 @@ const NutritionInfo = ({ nutrientes, porcion = 100 }) => {
       )}
       
       <NutrienteRow 
-        nombre="ProteÃ­nas" 
+        nombre="Proteínas" 
         valor={proteinas} 
         unidad="g"
         porcentajeVD={calcularPorcentajeVD(proteinas, 50)}
@@ -88,7 +93,7 @@ const NutritionInfo = ({ nutrientes, porcion = 100 }) => {
           <Text style={styles.subtitulo}>Otros Nutrientes</Text>
           
           <NutrienteRow 
-            nombre="Fibra DietÃĐtica" 
+            nombre="Fibra Dietética" 
             valor={fibra} 
             unidad="g"
             porcentajeVD={calcularPorcentajeVD(fibra, 25)}
@@ -108,7 +113,7 @@ const NutritionInfo = ({ nutrientes, porcion = 100 }) => {
       <View style={styles.divider} />
       
       <Text style={styles.notaVD}>
-        * Porcentaje del Valor Diario (VD) basado en una dieta de 2000 calorÃ­as
+        * Porcentaje del Valor Diario (VD) basado en una dieta de 2000 calorías
       </Text>
     </View>
   );

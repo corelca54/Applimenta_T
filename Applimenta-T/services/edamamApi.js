@@ -1,121 +1,97 @@
-// servicios/edamamApi.js
+// services/edamamApi.js
 import axios from 'axios';
-import { productosColombianosLocales } from './colombianProductsData';
 
-// Nota: Para usar API real de Edamam, obtén credenciales en https://developer.edamam.com/
-// Por ahora usamos datos locales como principal y fallback
+// --- CLAVES PARA LA API DE BASE DE DATOS DE COMIDA ---
+// (Estas son las que ya tenías y funcionan para buscar ingredientes)
+const FOOD_DB_ID = 'e9a4c934';
+const FOOD_DB_KEY = '8fba15a80becf38b2729c3ca63e84d84';
+const FOOD_DB_URL = 'https://api.edamam.com/api/food-database/v2/parser';
 
-// Buscar alimentos (usa datos locales principalmente)
+// --- CLAVES PARA LA API DE BÚSQUEDA DE RECETAS ---
+// ¡¡IMPORTANTE!! Debes obtener estas claves en tu dashboard de Edamam.
+// Crea una nueva aplicación de tipo "Recipe Search".
+const RECIPE_API_ID = '52ae425e'; 
+const RECIPE_API_KEY = 'cd5d297ce0043f92dc9a569f51fdf86a';
+const RECIPE_SEARCH_URL = 'https://api.edamam.com/api/recipes/v2';
+
+/**
+ * Busca ingredientes en la base de datos de Edamam
+ * (Esto usa tus llaves actuales)
+ */
 export const buscarAlimentos = async (query) => {
+  if (!query) return [];
+
   try {
-    // Buscar en productos locales
-    const productosLocales = productosColombianosLocales.filter(p => {
-      const nombre = (p.product_name || '').toLowerCase();
-      const descripcion = (p.description || '').toLowerCase();
-      return nombre.includes(query.toLowerCase()) || descripcion.includes(query.toLowerCase());
+    const response = await axios.get(FOOD_DB_URL, {
+      params: {
+        app_id: FOOD_DB_ID,
+        app_key: FOOD_DB_KEY,
+        ingr: query,
+        'nutrition-type': 'logging'
+      },
+      timeout: 8000 // Aumentado el timeout
+    });
+    
+    // Devuelve los 'hints' que contienen la comida y sus nutrientes
+    return response.data.hints || [];
+
+  } catch (apiError) {
+    console.error('Error en API Edamam (Food DB):', apiError.message);
+    return []; // Devuelve vacío si falla
+  }
+};
+
+/**
+ * Busca recetas saludables en la API de Edamam
+ * (Esto usa las NUEVAS llaves que debes crear)
+ */
+export const buscarRecetas = async (query) => {
+  // Alerta si no se han puesto las llaves
+  if (RECIPE_API_ID === 'TU_ID_DE_RECETAS_AQUI') {
+    console.error('¡Falta API Key de Recetas en edamamApi.js!');
+    alert('Error: Falta configurar la API de Recetas.');
+    return [];
+  }
+
+  try {
+    const response = await axios.get(RECIPE_SEARCH_URL, {
+      params: {
+        type: 'public',
+        app_id: RECIPE_API_ID,
+        app_key: RECIPE_API_KEY,
+        q: query,
+        health: 'health' // Filtro para recetas saludables
+      },
+      timeout: 8000
     });
 
-    if (productosLocales.length > 0) {
-      console.log(`Encontrados ${productosLocales.length} alimentos locales`);
-      return productosLocales.map(p => ({
-        food: {
-          label: p.product_name,
-          nutrients: p.nutriments
-        }
-      }));
-    }
+    // Devuelve la lista de recetas
+    return response.data.hits || [];
 
-    // Si no hay locales, intentar API de Edamam
-    try {
-      const response = await axios.get('https://api.edamam.com/api/food-database/v2/parser', {
-        params: {
-          app_id: 'e9a4c934',
-          app_key: '8fba15a80becf38b2729c3ca63e84d84',
-          ingr: query,
-          'nutrition-type': 'logging'
-        },
-        timeout: 5000
-      });
-
-      return response.data.hints || [];
-    } catch (apiError) {
-      console.warn('Edamam API no disponible:', apiError.message);
-      return [];
-    }
-  } catch (error) {
-    console.error('Error al buscar alimentos:', error);
+  } catch (apiError) {
+    console.error('Error en API Edamam (Recipes):', apiError.message);
     return [];
   }
 };
 
-// Analizar información nutricional de recetas (usa datos locales)
-export const analizarReceta = async (ingredientes) => {
-  try {
-    // Calcular totales de los ingredientes basados en datos locales
-    let totalCalorias = 0;
-    let totalProteinas = 0;
-    let totalCarbohidratos = 0;
-    let totalGrasas = 0;
-
-    for (const ingrediente of ingredientes) {
-      const producto = productosColombianosLocales.find(p =>
-        p.product_name.toLowerCase().includes(ingrediente.toLowerCase())
-      );
-
-      if (producto && producto.nutriments) {
-        totalCalorias += producto.nutriments['energy-kcal_100g'] || 0;
-        totalProteinas += producto.nutriments.proteins_100g || 0;
-        totalCarbohidratos += producto.nutriments.carbohydrates_100g || 0;
-        totalGrasas += producto.nutriments.fat_100g || 0;
-      }
-    }
-
-    return {
-      totalCalorias: Math.round(totalCalorias),
-      totalProteinas: Math.round(totalProteinas * 10) / 10,
-      totalCarbohidratos: Math.round(totalCarbohidratos * 10) / 10,
-      totalGrasas: Math.round(totalGrasas * 10) / 10
-    };
-  } catch (error) {
-    console.error('Error al analizar receta:', error);
-    return {
-      totalCalorias: 0,
-      totalProteinas: 0,
-      totalCarbohidratos: 0,
-      totalGrasas: 0
-    };
-  }
-};
-
-
-// Obtener recomendaciones nutricionales diarias (Colombia)
+/**
+ * Obtener recomendaciones nutricionales diarias (Placeholder)
+ * (Mantenemos tu lógica local por ahora)
+ */
 export const obtenerRecomendacionesDiarias = (edad, genero, nivelActividad) => {
-  // Valores basados en las guías colombianas de alimentación
   const recomendaciones = {
-    calorias: 2000,
-    proteinas: 50,
-    carbohidratos: 275,
-    grasas: 70,
-    fibra: 25,
-    azucares: 50,
-    sodio: 2.3
+    calorias: 2000, proteinas: 50, carbohidratos: 275, grasas: 70,
+    fibra: 25, azucares: 50, sodio: 2.3
   };
-
-  // Ajustar según edad y género
   if (genero === 'masculino') {
-    recomendaciones.calorias = 2500;
-    recomendaciones.proteinas = 56;
+    recomendaciones.calorias = 2500; recomendaciones.proteinas = 56;
   } else if (genero === 'femenino') {
-    recomendaciones.calorias = 2000;
-    recomendaciones.proteinas = 46;
+    recomendaciones.calorias = 2000; recomendaciones.proteinas = 46;
   }
-
-  // Ajustar según nivel de actividad
   if (nivelActividad === 'bajo') {
     recomendaciones.calorias *= 0.9;
   } else if (nivelActividad === 'alto') {
     recomendaciones.calorias *= 1.2;
   }
-
   return recomendaciones;
 };

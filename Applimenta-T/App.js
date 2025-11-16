@@ -8,11 +8,15 @@ import { auth } from './config/firebaseConfig';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 
+// --- (CORRECCIÓN 1: Importar Ionicons) ---
+import { Ionicons } from '@expo/vector-icons'; 
+
 // Importar pantallas
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import HomeScreen from './screens/HomeScreen';
 import SearchScreen from './screens/SearchScreen';
+import RecipesScreen from './screens/RecipesScreen';
 import ScanScreen from './screens/ScanScreen';
 import FoodDetailScreen from './screens/FoodDetailScreen';
 import FavoritesScreen from './screens/FavoritesScreen';
@@ -91,7 +95,26 @@ function MainTabNavigator() {
           }
         }}
       />
-
+      <Tab.Screen
+        name="Recipes"
+        component={RecipesScreen}
+        options={{
+          tabBarLabel: 'Recetas',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="receipt-outline" size={size} color={color} />
+          ),
+          headerShown: true,
+          headerTitle: 'Buscar Recetas',
+          headerStyle: {
+            backgroundColor: '#fff',
+            elevation: 0,
+            shadowOpacity: 0
+          }
+        }}
+      />
+      
+      {/* --- (CORRECCIÓN 2: Eliminada la pantalla 'Scan' duplicada) --- */}
+      
       <Tab.Screen
         name="Scan"
         component={ScanScreen}
