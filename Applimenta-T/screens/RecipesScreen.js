@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { buscarRecetas } from '../services/edamamApi';
 
 // Un componente de tarjeta para mostrar la receta
-const RecipeCard = ({ recipe, onPress }) => {
+const RecipeCard =React.memo(({ recipe, onPress }) => {
   const { label, image, source, calories, ingredientLines } = recipe;
   
   return (
@@ -31,7 +31,7 @@ const RecipeCard = ({ recipe, onPress }) => {
       </View>
     </TouchableOpacity>
   );
-};
+});
 
 export default function RecipesScreen({ navigation }) {
   const [query, setQuery] = useState('');
