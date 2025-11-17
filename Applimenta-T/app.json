@@ -26,7 +26,8 @@
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA"
       ],
       "package": "com.applimentat.app"
     },
@@ -41,6 +42,11 @@
         }
       ],
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "658a9a68-c443-44be-84d3-caaa164f9c08"
+      }
+    }
   }
 }
